@@ -1,0 +1,104 @@
+---
+
+### This playbook make the following tasks:
+  # Change the hostname
+  # Set Windows description, owner and organization
+  # Configure Primary DNS Server
+  # join server to domain
+  # Create RDP and Admin groups locally with the use of loop in a dictionary list
+  # Install Zabbix agent
+  # Install Deep Security agent
+  
+#### Change the hostname  Set Windows description, owner and organization ####
+
+- name: Change the hostname
+  win_hostname:
+    name: "{{ hostparameters.name }}"
+  register: res
+
+- name: Set Windows description, owner and organization
+  community.windows.win_computer_description:
+    description: "{{ hostparameters.description }}"
+    owner: "{{ hostparameters.owner | default ('infra-windows', true) }}"
+    organization: CIUSSSCN
+
+- name: Reboot
+  win_reboot:
+  when: res.reboot_required
+
+- name: wait 5 min  until reboot complete
+  ansible.windows.win_wait_for:
+    host: "{{ hostparameters.name }}"
+    timeout: 300
+    port: 5986
+    state: present 
+
+#### Configure Primary DNS Server and  join server to domain
+
+
+- name: Configure Primary DNS Server
+  win_dns_client:
+    adapter_names: 'Ethernet 2'
+    ipv4_addresses:
+      - 192.168.0.7   
+- name: join server to domain
+  win_domain_membership:
+    dns_domain_name: "{{ dns_domain_name }}"
+    domain_admin_user: "{{ domain_admin_user }}"
+    domain_admin_password: "{{ domain_admin_password }}"
+    hostname: "{{ hostparameters.name }}"
+    domain_ou_path: "{{ item.domain_ou_path }}" 
+    state: domain
+  loop: "{{ adou }}"
+  register: domain_state
+
+- name: show details of reboot_required
+  debug:
+    var: domain_state.results[0].reboot_required
+    verbosity: 2
+
+- name: win reboot after joining the domain
+  win_reboot:
+  when: domain_state.results[0].reboot_required
+
+- name: wait 5 min  until reboot complete
+  ansible.windows.win_wait_for:
+    host: "{{ hostparameters.name }}"
+    timeout: 300
+    port: 5986
+    state: present 
+
+
+#### Create RDP and Admin groups locally ###
+
+- name: Create RDP and Admin groups locally
+  win_group:
+    name: "{{ item.name }}"
+    description: "{{ item.description }}"
+    state: present
+  loop: "{{ groups_list | flatten(levels=1) }}"
+
+#### Installation l'agent zabbix ###
+
+- name: install Zabbix
+  win_chocolatey:
+    name: zabbix-agent
+    state: present
+
+#### Installation l'agent deep security ###
+
+- name: copy deep security agent bin in the temp folder
+  win_copy:
+    src: files/Agent-Core-Windows-20.0.0-1337.x86_64.msi
+    dest: C:\Windows\Temp\Agent-Core-Windows-20.0.0-1337.x86_64.msi
+
+- name: install deep security
+  win_package:
+    path: C:\Windows\Temp\Agent-Core-Windows-20.0.0-1337.x86_64.msi
+    state: present
+
+- name: clean the deep file
+  win_file:
+    path: C:\Windows\Temp\Agent-Core-Windows-20.0.0-1337.x86_64.msi
+    state: absent
+

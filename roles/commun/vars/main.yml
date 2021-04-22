@@ -1,0 +1,15 @@
+---
+# vars file which are common for many roles
+
+### domain parameters ###
+domain_server: addc
+builtin_admin_password: nino96$
+dns_domain_name: ansiwin.local
+domain_admin_password: nino96$
+domain_admin_user: administrator@ansiwin.local
+safe_mode_password: P@ssw0rd2021&
+path: dc=ansiwin,dc=local
+
+
+
+

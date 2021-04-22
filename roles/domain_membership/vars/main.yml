@@ -1,0 +1,35 @@
+---
+# vars file for addc
+
+### local admin credentials ###
+admin_local: tsni3001
+admin_local_password: nino96$
+
+adou:
+  - name: FS01
+    domain_ou_path: ou=win_servers,{{ path }}
+
+  - name: FS02
+    domain_ou_path: ou=security_servers,{{ path }}
+
+  - name: WEB01
+    domain_ou_path: ou=communication_servers,{{ path }}
+
+### local management group ###
+groups_list:
+  - name: RDP Admins
+    description: The RDP admin users
+  - name: Gestion Servers
+    description: Person who manage the servers
+
+    #hostparameters:
+    #  - name: FS01
+    #    description: "This is the first file server"
+    #    owner: "infra-windows"
+    #  - name: FS02
+    #    description: "This is the second file server"
+    #    owner: "infra-windows"
+    #  - name: WEB01
+    #    description: "This is the web server"
+    #    owner: "CIUSSS-Communications"
+

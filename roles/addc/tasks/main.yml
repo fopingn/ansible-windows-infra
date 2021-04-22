@@ -1,0 +1,122 @@
+---
+### The following tasks: 
+  #Change the hostname
+  # Set Windows description 
+  #Create new domain in a new forest on the target host 
+  # Create group with delete protection enabled and custom attributes
+
+### Change the hostname and Set Windows description
+
+- name: Change the hostname
+  win_hostname:
+    name: "{{ hostparameters.name }}"
+  register: res
+    #  notify: reboot_server
+- name: Set Windows description, owner and organization
+  community.windows.win_computer_description:
+    description: "{{ hostparameters.description }}"
+    owner: "{{ hostparameters.owner | default ('infra-windows', true) }}"
+    organization: CIUSSSCN
+    #register: result
+    #  notify: reboot_server
+
+- name: Reboot
+  win_reboot:
+  when: res.reboot_required
+
+- name: wait 5 min  until reboot complete
+  ansible.windows.win_wait_for:
+    host: "{{ hostparameters.name }}"
+    timeout: 300
+    port: 5986
+    state: present
+
+
+
+- name: Creation of a  new domain in a new forest on the target host
+  # The win_domain module
+  # Ensure that the domain named by dns_domain_name exists and is reachable.
+  # If the domain is not reachable, the domain is created in a new forest on the target Windows Server 2012R2+ host.
+  # This module may require subsequent use of the ansible.windows.win_reboot action if changes are made.
+
+  win_domain:
+    dns_domain_name: "{{ dns_domain_name }}"
+    safe_mode_password: "{{ safe_mode_password }}"
+    install_dns: yes
+    database_path: "{{ database_path }}" 
+    domain_mode: "{{ domain_mode }}"
+    forest_mode: "{{ forest_mode }}"
+    sysvol_path: "{{ sysvol_path }}" 
+  register: domain_install
+
+
+- name: Reboot after installation and wait for AD Services to be ready before try to connect
+  win_reboot:
+    test_command: "Get-ADUser -Identity Administrator -Properties *"
+  when: domain_install.reboot_required
+
+- name: wait 5 min  until reboot complete
+  ansible.windows.win_wait_for:
+    host: "{{ hostparameters.name }}"
+    timeout: 600
+    sleep: 30
+    port: 5986
+    state: present
+
+
+  # win_domain_group – Creates, modifies or removes domain groups
+  
+- name: Create group with delete protection enabled and custom attributes
+  win_domain_group:
+    name: "{{ item }}"
+    domain_server: "{{ hostparameters.name }}"
+    domain_username: "{{ domain_admin_user }}"
+    domain_password: "{{ domain_admin_password}}"
+    scope: domainlocal
+    category: security
+    ignore_protection: yes
+  loop: 
+    - "server SA"
+    - "server security"
+    - "infra-windows"
+    - "infra-unix" 
+
+- name: Ensure a server is a domain controller
+  win_domain_controller:
+    dns_domain_name: "{{ dns_domain_name }}"
+    safe_mode_password: "{{ safe_mode_password }}"
+    domain_mode: "{{ domain_mode }}"
+    forest_mode: "{{ forest_mode }}"
+    domain_admin_user: "{{ domain_admin_user }}"
+    domain_admin_password: "{{ domain_admin_password}}"
+    state: domain_controller
+  register: dc_promotion
+
+
+- name: Reboot after the dc promotion
+  win_reboot:
+  when: dc_promotion.reboot_required
+
+# https://answers.microsoft.com/en-us/windows/forum/windows_7-performance/trying-to-install-program-using-powershell-and/4c3ac2b2-ebd4-4b2a-a673-e283827da143
+- name: Powershell fix security 
+  win_shell: '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12'
+
+- name: install PowershellGet module 
+  win_psmodule:
+    name: PowershellGet
+    state: present
+
+    #- name: Install nuget package provider
+    #  win_shell: 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' 
+
+- name: Install XactiveDirectory
+  win_psmodule:
+     name: ActiveDirectoryDSC
+     state: present
+- name: Create AU
+  win_dsc:
+     resource_name: ADOrganizationalUnit
+     name: "{{ item.name }}" 
+     description: "{{ item.description }}"
+     path:  "{{ path }}"
+  loop:  "{{ domain_ou | flatten(levels=1) }}"

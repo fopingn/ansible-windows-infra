@@ -1,0 +1,16 @@
+---
+- hosts: dc
+  roles: 
+    - addc
+
+- hosts: fs
+  
+  roles:
+    - domain_membership
+    - rdp_smb
+
+- hosts: web
+  roles:
+    - domain_membership
+    - iis
+

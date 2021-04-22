@@ -1,0 +1,7 @@
+---
+# handlers file for rdp_smb
+
+- name: reboot_server
+  win_reboot:
+  when: win_feature.reboot_required
+

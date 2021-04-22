@@ -1,0 +1,12 @@
+---
+hostparameters:
+  - name: FS01
+    description: "This is the first file server"
+    owner: "infra-windows"
+  - name: FS02
+    description: "This is the second file server"
+    owner: "infra-windows"
+  - name: WEB01
+    description: "This is the web server"
+    owner: "CIUSSS-Communications"
+

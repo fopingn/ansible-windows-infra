@@ -1,0 +1,24 @@
+---
+# vars file for addc
+
+### domain parameters ###
+domain_mode: win2012
+forest_mode: win2012
+database_path: C:\NTDS
+sysvol_path: C:\SYSVOL
+domain_ou:
+  - name: win_servers
+    description: ops team servers
+
+  - name: security_servers
+    description: security team servers
+
+  - name: communication_servers
+    description: communication team servers
+
+hostparameters:
+  name: ADDC
+  description: "This is an active directory server"
+  owner: "infra-windows"
+
+
