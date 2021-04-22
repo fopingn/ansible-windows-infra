@@ -1,12 +1,12 @@
 In this project we will use ansible to configure a microsoft infrastructure with a domain controller (windows 2016), two files servers (windows 2019) and a web server (windows 2012) with IIS services. We&#39;ll use virtualbox environnement.
 
 Our architecture will look like this:
-![architecture] (https://github.com/fopingn/ansible-windows-infra/blob/main/answin.png "ansible-windows-infra")
+![architecture](https://github.com/fopingn/ansible-windows-infra/blob/main/answin.png "ansible-windows-infra")
 
 Each node is connected to two networks: one with NAT and another for internal communication.
-![Nat_connection] (https://github.com/fopingn/ansible-windows-infra/blob/main/virtual_net1.png)
+![Nat_connection](https://github.com/fopingn/ansible-windows-infra/blob/main/virtual_net1.png)
 
-![Private_host_connection] (https://github.com/fopingn/ansible-windows-infra/blob/main/virtual_net2.png)
+![Private_host_connection](https://github.com/fopingn/ansible-windows-infra/blob/main/virtual_net2.png)
 
 We assumed the following elements:
 
